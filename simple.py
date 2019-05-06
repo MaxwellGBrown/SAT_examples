@@ -24,6 +24,13 @@ def simple_lunch():
     ]
 
 
+def _readable_cnf(condition):
+    # TODO Inspect condition items and determine better verbage?
+    condition = [c.replace("~", "NOT ") for c in condition]
+    # TODO Recursive statements?
+    return " OR ".join(condition)
+
+
 if __name__ == "__main__":
     try:
         _filename, puzzle_name, *_etc = sys.argv
@@ -37,9 +44,12 @@ if __name__ == "__main__":
     statement = puzzle()
 
     print("Statement\n--------")
-    print(statement)
+    cnf_statement_lines = ["    AND"] * ((len(statement) * 2) - 1)
+    cnf_statement_lines[0::2] = [_readable_cnf(c) for c in statement]
+    for line in cnf_statement_lines:
+        print(line)
 
     all_solutions = sat_utils.solve_all(statement)
     print('\nSolutions\n--------')
     for solution in all_solutions:
-        print(solution)
+        print(_readable_cnf(solution))
