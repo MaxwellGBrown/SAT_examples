@@ -1,12 +1,12 @@
 """Tests for the puzzles, so I can refactor them without going crazy."""
 import examples
-import sat_utils
+import examples.puzzles.comets
 
 
 def test_comets():
     """Assert the comets problem is solved correctly."""
-    statement = examples.comets()
-    solutions = sat_utils.solve_all(statement)
+    statement = examples.puzzles.comets.comets()
+    solutions = examples.sat_utils.solve_all(statement)
 
     assert len(solutions) == 1
 

@@ -1,39 +1,20 @@
 """Experimentation to the pycosat SAT Solver w/ Hettinger's utils."""
-import datetime
-import itertools
-import sys
+# import itertools
 
-import sat_utils
+from examples import sat_utils
 
 
 # Conjunctive Normal Form: A bunch of OR operations connected by AND operations
 # Disjunctive Normal Form: A bunch of AND operations connected by OR operations
 
-def implies(a, b):
-    """Transform A->B into ~A or B."""
-    return (sat_utils.neg(a), b)
-
-
-def grouper(n, iterable, fillvalue=None):
-    """Group iterable in chunks."""
-    args = [iter(iterable)] * n
-    return itertools.izip_longest(fillvalue=fillvalue, *args)
-
-
-def simple_lunch():
-    """Return example of whether I ordered or purchased a lunch."""
-    return [
-        # I either didn't bring a lunch or didn't purchase a lunch
-        implies("Brought Lunch", "~Purchased Lunch"),
-        # I either brought a lunch or purchased a lunch
-        implies("~Brought Lunch", "Purchased Lunch"),
-        # I did not bring a lunch
-        ("~Brought Lunch",),
-    ]
-
 
 def comets():
     """Return a 4x4 logic square of comet discoveries."""
+    # TODO Create a statement builder class
+    # TODO Use a set for statement instead of += (to help avoid duplicate clauses?) # noqa
+    #      In that same vein is there a way to eliminate other duplicate
+    #      overriding logics?
+    # TODO Abstract the ideas of comets/years/astrologers?
     def _discovered_by(comet, astrologer):
         return f"{comet} was discovered by {astrologer}"
 
@@ -80,6 +61,7 @@ def comets():
     # The comet Underwood discovered was discovered 2 years
     # after the comet Jack Ingram Discovered
     # =========================================================================
+    # TODO Why does this clause take so long to run?
     # dnf = list()
     # for comet_1, comet_2 in itertools.permutations(comets, 2):
     #     for index in range(len(comets) - 2):
@@ -137,46 +119,3 @@ def comets():
     # =========================================================================
 
     return statement
-
-
-def _readable_cnf(condition, separator=" OR "):
-    # TODO Inspect condition items and determine better verbage?
-    condition = [c.replace("~", "NOT ") for c in condition]
-    # TODO Recursive statements?
-    return separator.join(condition)
-
-
-if __name__ == "__main__":
-    try:
-        _filename, puzzle_name, *_etc = sys.argv
-        puzzle = locals()[puzzle_name]
-    except ValueError:
-        puzzle = simple_lunch
-    except KeyError:
-        print(f"Puzzle by name of {puzzle_name!r} does not exist.")
-        exit()
-
-    start_compose_statement = datetime.datetime.now()
-    statement = puzzle()
-    end_compose_statement = datetime.datetime.now()
-
-    # print("Statement\n--------")
-    # cnf_statement_lines = ["    AND"] * ((len(statement) * 2) - 1)
-    # cnf_statement_lines[0::2] = [_readable_cnf(c) for c in statement]
-    # for line in cnf_statement_lines:
-    #     print(line)
-
-    print("\nCalculating solutions...\n")
-
-    start_solve_all = datetime.datetime.now()
-    all_solutions = sat_utils.solve_all(statement)
-    end_solve_all = datetime.datetime.now()
-    print('\nSolutions\n--------')
-    for num, solution in enumerate(all_solutions, start=1):
-        print(f"Solution #{num}")
-        print(_readable_cnf(solution, separator="\n"))
-        print("\n\n")
-
-    print(f"Statement Composition: {end_compose_statement - start_compose_statement}")
-    print(f"Solve Time: {end_solve_all - start_solve_all}")
-    print(f"Total Runtime: {end_solve_all - start_compose_statement}")
