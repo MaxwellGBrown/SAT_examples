@@ -8,6 +8,26 @@ from examples import sat_utils
 # Disjunctive Normal Form: A bunch of AND operations connected by OR operations
 
 
+class StatementBuilder:
+    """Constructs a CNF statement to solve."""
+
+    def __init__(self):
+        """Init a statement to solve.
+
+        Subjects is the possible subjects of categorization (in this case the
+        comets).
+        """
+        self.statement = list()  # TODO Convert to a set to avoid duplicates
+
+    def add(self, condition):
+        """Add a condition to the statement."""
+        self.statement += condition
+
+    def build(self):
+        """Construct the statement."""
+        return self.statement
+
+
 def comets():
     """Return a 4x4 logic square of comet discoveries."""
     # TODO Create a statement builder class
@@ -25,37 +45,37 @@ def comets():
     years = ("2008", "2009", "2010", "2011")
     astrologers = ("Hal Gregory", "Jack Ingram", "Ken Jones", "Underwood")
 
-    statement = list()
+    builder = StatementBuilder()
 
     for comet in comets:
         # Each comet was discovered in one of these years
-        statement += sat_utils.one_of(_discovered_in(comet, year) for year in years)  # noqa
+        builder.add(sat_utils.one_of(_discovered_in(comet, year) for year in years))  # noqa
         # Each comet was discovered by one of these people
-        statement += sat_utils.one_of(_discovered_by(comet, astrologer) for astrologer in astrologers)  # noqa
+        builder.add(sat_utils.one_of(_discovered_by(comet, astrologer) for astrologer in astrologers))  # noqa
 
     # Each year is applied to exactly one comet
     for year in years:
-        statement += sat_utils.one_of(_discovered_in(comet, year) for comet in comets)  # noqa
+        builder.add(sat_utils.one_of(_discovered_in(comet, year) for comet in comets))  # noqa
     # Each astrologer discovered exactly one comet
     for astrologer in astrologers:
-        statement += sat_utils.one_of(_discovered_by(comet, astrologer) for comet in comets)  # noqa
+        builder.add(sat_utils.one_of(_discovered_by(comet, astrologer) for comet in comets))  # noqa
 
     # Clues
 
     # The one discovered in 2009 is Casputi
     # =========================================================================
-    statement += [(_discovered_in("Casputi", "2009"),)]
+    builder.add([(_discovered_in("Casputi", "2009"),)])
     # =========================================================================
 
     # The one Jack Ingram discovered was found in 2008
     # =========================================================================
-    statement += sat_utils.from_dnf([
+    builder.add(sat_utils.from_dnf([
         (
             _discovered_by(comet, "Jack Ingram"),
             _discovered_in(comet, "2008"),
         )
         for comet in comets
-    ])
+    ]))
     # =========================================================================
 
     # The comet Underwood discovered was discovered 2 years
@@ -91,14 +111,14 @@ def comets():
                 )
             ]
     cnf = sat_utils.from_dnf(dnf)
-    statement += cnf
+    builder.add(cnf)
     # =========================================================================
 
     # The comet discovered in 2010 is either
     # the one Ken Jones discovered or Crecci
     # =========================================================================
     for comet in comets:
-        statement += sat_utils.from_dnf([
+        builder.add(sat_utils.from_dnf([
             # TODO I'm doing too much human-logic here; the statement proper
             #      must somehow be easier to represent
             (
@@ -115,7 +135,7 @@ def comets():
                 # ...therefor not discovered by Ken Jones
                 sat_utils.neg(_discovered_by("Crecci", "Ken Jones")),
             ),
-        ])
+        ]))
     # =========================================================================
 
-    return statement
+    return builder.build()
