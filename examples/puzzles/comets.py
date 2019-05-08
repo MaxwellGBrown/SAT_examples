@@ -17,7 +17,7 @@ class StatementBuilder:
         Subjects is the possible subjects of categorization (in this case the
         comets).
         """
-        self.statement = list()  # TODO Convert to a set to avoid duplicates
+        self.statement = list()
         self.subjects = tuple(subjects)
         self.groups = tuple()
 
@@ -46,6 +46,8 @@ class StatementBuilder:
 
     def add(self, condition):
         """Add a condition to the statement."""
+        # TODO Convert to a set to avoid duplicates
+        #      Sort items in condition to avoid duplicate tuples in wrong order
         self.statement += condition
 
     def build(self):
