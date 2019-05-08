@@ -11,13 +11,38 @@ from examples import sat_utils
 class StatementBuilder:
     """Constructs a CNF statement to solve."""
 
-    def __init__(self):
+    def __init__(self, subjects):
         """Init a statement to solve.
 
         Subjects is the possible subjects of categorization (in this case the
         comets).
         """
         self.statement = list()  # TODO Convert to a set to avoid duplicates
+        self.subjects = tuple(subjects)
+        self.groups = tuple()
+
+    def add_group(self, group, *, formatter=lambda x, y: f"{x} {y}"):
+        """Add a group of relations to associate to subjects.
+
+        The values in a group are exclusive, meaning that only one subject can
+        be associated with that value.
+        """
+        self.groups = tuple([group, *self.groups])
+
+        # Each subject must be applied to one value in the group
+        for subject in self.subjects:
+            self.add(
+                sat_utils.one_of(formatter(subject, value) for value in group)
+            )
+
+        # Each value in the group must be applied to a subject
+        for value in group:
+            self.add(
+                sat_utils.one_of(
+                    formatter(subject, value)
+                    for subject in self.subjects
+                )
+            )
 
     def add(self, condition):
         """Add a condition to the statement."""
@@ -45,20 +70,9 @@ def comets():
     years = ("2008", "2009", "2010", "2011")
     astrologers = ("Hal Gregory", "Jack Ingram", "Ken Jones", "Underwood")
 
-    builder = StatementBuilder()
-
-    for comet in comets:
-        # Each comet was discovered in one of these years
-        builder.add(sat_utils.one_of(_discovered_in(comet, year) for year in years))  # noqa
-        # Each comet was discovered by one of these people
-        builder.add(sat_utils.one_of(_discovered_by(comet, astrologer) for astrologer in astrologers))  # noqa
-
-    # Each year is applied to exactly one comet
-    for year in years:
-        builder.add(sat_utils.one_of(_discovered_in(comet, year) for comet in comets))  # noqa
-    # Each astrologer discovered exactly one comet
-    for astrologer in astrologers:
-        builder.add(sat_utils.one_of(_discovered_by(comet, astrologer) for comet in comets))  # noqa
+    builder = StatementBuilder(comets)
+    builder.add_group(years, formatter=_discovered_in)
+    builder.add_group(astrologers, formatter=_discovered_by)
 
     # Clues
 
