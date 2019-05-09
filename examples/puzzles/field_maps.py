@@ -7,11 +7,6 @@ import fuzzywuzzy.process
 from examples import sat_utils
 
 
-NULL_FIELD = {
-    "label": "NOTHING",
-}
-
-
 log = logging.getLogger('field_maps')
 log.setLevel(logging.DEBUG)
 handler = logging.StreamHandler(sys.stdout)
@@ -19,59 +14,94 @@ handler.setLevel(logging.DEBUG)
 log.addHandler(handler)
 
 
-def _maps_to(incoming_field, outgoing_field):
-    return f"{incoming_field} -> {outgoing_field}"
+class Field:
+    """Representation of a field to me mapped from/to."""
+
+    def __init__(self, label):
+        """Init Field."""
+        self.label = label
+
+    def __repr__(self):
+        """Return repr of Field instance."""
+        return f"<Field(label={self.label!r})>"
+
+    def __str__(self):
+        """Return str value of Field instance."""
+        return self.label
+
+
+class Mapping:
+    """Represents a mapping between two fields."""
+
+    def __init__(self, source_field, target_field):
+        """Init Mapping with source_field -> target_field."""
+        self.source_field = source_field
+        self.target_field = target_field
+
+    def __repr__(self):
+        """Return repr of Mapping instance."""
+        return f"<Mapping(source_field={self.source_field}," \
+               "{self.target_field})>"
+
+    def __str__(self):
+        """Return str representation of Mapping instance."""
+        return f"{self.source_field} -> {self.target_field}"
 
 
 SOURCE_FIELDS = [
-    {"label": "SKU"},
-    {"label": "Product Name"},
-    {"label": "Vendor Name"},
-    {"label": "AAAAAAAAAAA"},  # Should never map to anything
+    Field("SKU"),
+    Field("Product Name"),
+    Field("Vendor Name"),
+    Field("AAAAAAAAAA"),  # Should never map to anything
 ]
 
 
 TARGET_FIELDS = [
-    {"label": "sku"},
-    {"label": "name"},
-    {"label": "vendor"},
-    {"label": "ZZZZZZZZZZZ"},  # Nothing should have anything mapped to
+    Field("sku"),
+    Field("name"),
+    Field("vendor"),
+    Field("ZZZZZZZZZZZ"),  # Nothing should have anything mapped to
 ]
+
+
+NULL_FIELD = Field("NOTHING")
+
+
+# TODO Need to teach the statement to prefer mapping to NOTHING over mapping to
+#      an unmapped field.
 
 
 def solve_maps(source_fields=SOURCE_FIELDS, target_fields=TARGET_FIELDS):
     """Attempt to map incoming fields to outgoing fields."""
     statement = list()
 
-    target_labels = [field["label"] for field in target_fields]
-    source_labels = [field["label"] for field in source_fields]
-
     # Determine what source_fields can map to which target_fields
-    for target_label in target_labels:
+    for target_field in target_fields:
         statement += sat_utils.one_of(
-            _maps_to(source_label, target_label)
-            for source_label in [*source_labels, NULL_FIELD["label"]]
+            str(Mapping(source_field, target_field))
+            for source_field in [*source_fields, NULL_FIELD]
         )
 
     # Determine what target_fields a source_field can map to
-    for source_label in source_labels:
-        exclusive = sat_utils.one_of(
-            _maps_to(source_label, target_label)
-            for target_label in [*target_labels, NULL_FIELD["label"]]
+    for source_field in source_fields:
+        statement += sat_utils.one_of(
+            str(Mapping(source_field, target_field))
+            for target_field in [*target_fields, NULL_FIELD]
         )
-        statement += exclusive
 
     # TODO Perhaps writing a large DNF of possibilities for a single field for
     #      all evaluations is the way to go, instead of each of them at the top
-    for source_label in source_labels:
+    targets_by_label = {str(field): field for field in target_fields}
+    for source_field in source_fields:
         # Fuzzy match fields by label name
-        scores = fuzzywuzzy.process.extract(source_label, target_labels)
-        log.debug("Scores for %r: %r", source_label, scores)
+        scores = fuzzywuzzy.process.extract(str(source_field), targets_by_label.keys())  # noqa
+        log.debug("Scores for %s: %r", source_field, scores)
         if any(score > 70 for _, score in scores):
             fuzzy_condition = sat_utils.from_dnf([
-                (_maps_to(source_label, target),)
-                for target, score in scores if score > 70
+                (str(Mapping(source_field, targets_by_label[target_label])),)
+                for target_label, score in scores if score > 70
             ])
+            log.debug(fuzzy_condition)
             statement += fuzzy_condition
 
     return statement
