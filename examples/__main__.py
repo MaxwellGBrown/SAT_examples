@@ -6,11 +6,13 @@ from examples import sat_utils
 from examples import _readable_cnf
 from examples.puzzles import simple_lunch
 from examples.puzzles import comets
+from examples.puzzles import field_maps
 
 
 puzzles = {
     "simple_lunch": simple_lunch.simple_lunch,
     "comets": comets.comets,
+    "field_maps": field_maps.solve_maps,
 }
 
 
