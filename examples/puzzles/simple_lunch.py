@@ -8,12 +8,16 @@ def implies(a, b):
 
 
 def simple_lunch():
-    """Return example of whether I ordered or purchased a lunch."""
+    """Return problem regarding whether lunch was picked up or delivered."""
     return [
-        # I either didn't bring a lunch or didn't purchase a lunch
-        implies("Brought Lunch", "~Purchased Lunch"),
-        # I either brought a lunch or purchased a lunch
-        implies("~Brought Lunch", "Purchased Lunch"),
-        # I did not bring a lunch
-        ("~Brought Lunch",),
+        # I will order pickup OR I will order delivery
+        ("pickup", "delivery"),
+        # I will NOT order pickup OR I will NOT order delivery
+        ("~pickup", "~delivery"),
+        # It is raining OR it is NOT raining
+        ("raining", "~raining"),
+        # I  will pickup OR it is raining
+        ("pickup", "raining"),
+        # I will get delivery OR it is NOT raining
+        ("delivery", "~raining"),
     ]
