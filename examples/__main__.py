@@ -8,6 +8,7 @@ from examples.puzzles import simple_lunch
 from examples.puzzles import comets
 from examples.puzzles import field_maps
 from examples.puzzles import tfinley
+from examples.puzzles import aerophobes
 
 
 puzzles = {
@@ -15,6 +16,7 @@ puzzles = {
     "comets": comets.comets,
     "field_maps": field_maps.solve_maps,
     "tfinley": tfinley.tfinley,
+    "aerophobes": aerophobes.aerophobes,
 }
 
 
@@ -46,7 +48,7 @@ if __name__ == "__main__":
     print('\nSolutions\n--------')
     for num, solution in enumerate(all_solutions, start=1):
         print(f"Solution #{num}")
-        print(_readable_cnf(solution, separator="\n"))
+        print(_readable_cnf(sorted(solution), separator="\n"))
         print("\n\n")
 
     print(f"Statement Composition: {end_compose_statement - start_compose_statement}")  # noqa
